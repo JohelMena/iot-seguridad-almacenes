@@ -1,0 +1,8 @@
+dnspython==2.9.2
+kafka-python==3.0.13
+paho-mqtt==2.2.0
+psycopg==3.3.9
+psycopg-binary==3.3.9
+pymongo==4.20.1
+python-dotenv==1.2.4
+tzdata==2026.6
