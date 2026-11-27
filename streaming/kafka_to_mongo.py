@@ -1,6 +1,8 @@
 
 import os
 import json
+import hashlib
+
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -61,20 +63,39 @@ try:
             "utf-8", errors="replace"
         )
 
-        # Intentar interpretar el mensaje como JSON
+        # Interpretar el mensaje como JSON
         try:
             datos = json.loads(texto)
             formato = "json"
+
         except json.JSONDecodeError:
             datos = None
             formato = "texto"
 
-        # Identificador para evitar duplicados
-        identificador = (
+        # Identificador original
+        identificador_anterior = (
             f"{mensaje.topic}:"
             f"{mensaje.partition}:"
             f"{mensaje.offset}"
         )
+
+        # Huella unica del contenido
+        huella = hashlib.sha256(
+            mensaje.value
+        ).hexdigest()
+
+        identificador = (
+            f"{identificador_anterior}:{huella}"
+        )
+
+        # Compatibilidad con documentos anteriores
+        existente = coleccion.find_one({
+            "_id": identificador_anterior,
+            "raw_payload": texto
+        })
+
+        if existente is not None:
+            identificador = identificador_anterior
 
         # Documento para la Staging Area
         documento = {
@@ -95,7 +116,7 @@ try:
             upsert=True
         )
 
-        # Confirmar el mensaje despues de almacenarlo
+        # Confirmar despues de almacenar
         consumer.commit()
 
         print("\n------------------------------")
